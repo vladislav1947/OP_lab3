@@ -1,0 +1,2 @@
+greedy_chosen,y,greedy_obj_mln,greedy_time_s,milp_obj_mln,milp_time_s,obj_gap_pct,greedy_feasible
+"8, 9, 10, 13, 14, 15",1,854.2,0.011582398999962606,877.4999999999998,0.005590425998889259,2.6552706552706247,True
