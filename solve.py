@@ -56,9 +56,10 @@ def solve_milp(m, log_path=None, time_limit=60.0):
 def solve_lp(m, log_path=None):
     """LP-релаксация: те же A, b, но 0 <= z <= 1 без целочисленности."""
     t0 = time.perf_counter()
+    opts = dict(disp=bool(log_path))  # лог HiGHS пишем только если он нужен
     with _fd_stdout(log_path) if log_path else contextlib.nullcontext():
         res = linprog(-m['c'], A_ub=m['A'], b_ub=m['b'], bounds=(0, 1),
-                      method='highs')
+                      method='highs', options=opts)
     dt = time.perf_counter() - t0
     x = np.asarray(res.x) if res.x is not None else np.full(len(m['c']), np.nan)
     obj = float(np.dot(m['c'], x)) if res.x is not None else float('nan')
