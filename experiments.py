@@ -46,13 +46,12 @@ def exp3_scenarios(d, log_path=None):
         m = model.build(d, budget=b)
         lp = solve.solve_lp(m)
         mi = solve.solve_milp(m, log_path=log_path)
+        v = verify.verify(d, m, mi['x'])   # независимая проверка каждого сценария
         chosen = chosen_set(m, mi['x'])
-        spent = float(np.dot(d['cost'], np.round(mi['x'][:m['n']]))
-                     + d['platform_cost'] * round(mi['x'][-1]))
         rows.append(dict(scenario=name, budget_mln=b, chosen=', '.join(map(str, chosen)),
                          y=int(round(mi['x'][-1])), n_chosen=len(chosen),
-                         spent_mln=spent, obj_mln=mi['obj'], lp_obj_mln=lp['obj'],
-                         gap_pct=gap_pct(mi['obj'], lp['obj']),
+                         spent_mln=v['spent'], obj_mln=mi['obj'], lp_obj_mln=lp['obj'],
+                         gap_pct=gap_pct(mi['obj'], lp['obj']), ok=v['ok'],
                          nodes=mi['node_count'], time_s=mi['time']))
     return rows
 
@@ -86,7 +85,9 @@ def greedy(d, budget=None):
     n = d['n']
     cost = np.asarray(d['cost'], dtype=float)
     profit = np.asarray(d['profit'], dtype=float)
-    prereq = {i: j for i, j in d['deps']}   # i требует j, 1-нумерация
+    prereq = {}                            # i -> список пререквизитов (у проекта их может быть несколько)
+    for i, j in d['deps']:
+        prereq.setdefault(i, []).append(j)
     g = set(d['group'])
     F = float(d['platform_cost'])
     b = float(d['budget'] if budget is None else budget)
@@ -104,8 +105,7 @@ def greedy(d, budget=None):
             if k in need:
                 continue
             need.add(k)
-            if k in prereq:
-                stack.append(prereq[k])
+            stack.extend(prereq.get(k, []))
         add = [k for k in need if not x[k - 1]]
         if not add:
             continue
@@ -152,6 +152,37 @@ def exp6_bigm(d):
                          nodes=mi['node_count'], time_s=mi['time'],
                          M_over_budget=big_m / m['budget']))
     return rows
+
+
+# --- контрольный полный перебор (только для базового n=15) ------------------
+
+def exp_bruteforce(d, milp):
+    """Полный перебор всех 2^(n+1) комбинаций: подтверждает оптимум MILP и его
+    единственность независимо от солвера. Практичен только при n=15."""
+    import itertools
+    n = int(d['n'])
+    cost = np.asarray(d['cost'], dtype=float)
+    profit = np.asarray(d['profit'], dtype=float)
+    deps = d['deps']
+    g = d['group']
+    f = float(d['platform_cost'])
+    b = float(d['budget'])
+    best, optima = -1.0, 0
+    for bits in itertools.product((0, 1), repeat=n + 1):
+        x, y = bits[:n], bits[n]
+        if sum(cost[i] * x[i] for i in range(n)) + f * y > b:
+            continue
+        if any(x[i - 1] > x[j - 1] for i, j in deps):
+            continue
+        if sum(x[j - 1] for j in g) > len(g) * y:
+            continue
+        obj = sum(profit[i] * x[i] for i in range(n))
+        if obj > best + 1e-9:
+            best, optima = obj, 1
+        elif abs(obj - best) <= 1e-9:
+            optima += 1
+    return dict(obj_mln=best, n_optima=optima,
+                matches_milp=bool(abs(best - milp['obj']) < 1e-6))
 
 
 # --- доп. задание: две формулировки по силе LP-релаксации -------------------

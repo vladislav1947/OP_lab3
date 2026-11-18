@@ -19,4 +19,4 @@ Model status        : Optimal
 Simplex   iterations: 4
 Objective value     : -9.0116964286e+02
 P-D objective error :  0.0000000000e+00
-HiGHS run time      :          0.05
+HiGHS run time      :          0.01

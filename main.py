@@ -6,6 +6,7 @@
 Все артефакты пишутся в data/ и output/.
 """
 import csv
+import glob
 import os
 
 import data_gen
@@ -25,11 +26,14 @@ def write_csv(path, rows, fieldnames):
 def main():
     os.makedirs('data', exist_ok=True)
     os.makedirs('output', exist_ok=True)
+    # логи солвера пишутся в режиме 'a': очищаем их, чтобы не росли между запусками
+    for f in glob.glob('output/solver_*.log'):
+        os.remove(f)
 
     # --- данные варианта (seed 10116, воспроизводимо) ----------------------
-    d = data_gen.generate()
-    data_gen.save(d)
-    print(f"[данные] n={d['n']}, бюджет B={d['budget']:.0f} млн руб., "
+    data_gen.save(data_gen.generate())       # data/ — артефакт seed (идемпотентно)
+    d = data_gen.load()                      # конвейер читает вариант из CSV/JSON:
+    print(f"[данные] n={d['n']}, бюджет B={d['budget']:.0f} млн руб., "  # правка данных реально влияет
           f"платформа F={d['platform_cost']:.0f} млн руб., G={d['group']}, "
           f"зависимости={d['deps']}")
 
@@ -38,6 +42,8 @@ def main():
         d, log_milp='output/solver_base.log', log_lp='output/solver_lp_base.log')
     lp, mi = e1['lp'], e1['milp']
     print(f"[MILP] статус: {mi['status_str']}; цель = {mi['obj']:.4f} млн руб.; "
+          f"двойственная граница = {mi['dual_bound']:.4f} (primal = dual => "
+          f"глобальный оптимум); gap солвера = {mi['solver_gap']:.2%}; "
           f"узлов ветвления = {mi['node_count']}; время = {mi['time']:.3f} с")
     print(f"[LP  ] цель = {lp['obj']:.4f} млн руб.; дробные переменные: "
           f"{', '.join(e1['fractional']) or '—'}; y* = {e1['y_lp']:.3f}; "
@@ -51,6 +57,14 @@ def main():
     print(report)
     with open('output/verification.txt', 'w', encoding='utf-8') as f:
         f.write(report + '\n')
+
+    # --- контрольный полный перебор 2^16 (независимое подтверждение) -------
+    bf = experiments.exp_bruteforce(d, mi)
+    write_csv('output/exp_bruteforce.csv', [bf],
+              ['obj_mln', 'n_optima', 'matches_milp'])
+    print(f"[перебор] полный перебор 2^{d['n'] + 1} комбинаций: оптимум "
+          f"{bf['obj_mln']:.4f} млн руб., оптимумов {bf['n_optima']}, "
+          f"совпадает с MILP: {bf['matches_milp']}")
 
     # --- таблица решения ----------------------------------------------------
     with open('output/solution.csv', 'w', newline='', encoding='utf-8') as f:
@@ -66,13 +80,13 @@ def main():
     scen = experiments.exp3_scenarios(d, log_path='output/solver_scenarios.log')
     write_csv('output/scenarios.csv', scen,
               ['scenario', 'budget_mln', 'chosen', 'y', 'n_chosen', 'spent_mln',
-               'obj_mln', 'lp_obj_mln', 'gap_pct', 'nodes', 'time_s'])
+               'obj_mln', 'lp_obj_mln', 'gap_pct', 'ok', 'nodes', 'time_s'])
     plots.plot_scenarios(scen)
     print("[сценарии] записано output/scenarios.csv + output/scenarios.png")
     for r in scen:
         print(f"    {r['scenario']}: выбрано [{r['chosen']}], y={r['y']}, "
               f"цель {r['obj_mln']:.1f} (LP {r['lp_obj_mln']:.1f}, "
-              f"gap {r['gap_pct']:.2f}%)")
+              f"gap {r['gap_pct']:.2f}%), проверка: {'OK' if r['ok'] else 'FAIL'}")
 
     # --- эксперимент 4: масштабирование -------------------------------------
     scale = experiments.exp4_scaling()

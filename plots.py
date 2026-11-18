@@ -47,7 +47,7 @@ def plot_scaling(rows, path='output/scaling.png'):
     fig, axes = plt.subplots(1, 3, figsize=(12.5, 3.8))
     axes[0].plot(ns, t, 'o-', color='#2d5f8a')
     axes[0].set_title('Время решения MILP')
-    axes[0].set_ylabel('с (медиана из 5 прогонов)')
+    axes[0].set_ylabel('с (медиана из 15 прогонов)')
     axes[1].plot(ns, nodes, 'o-', color='#b3452d')
     axes[1].set_title('Узлы ветвления HiGHS')
     axes[2].plot(ns, gaps, 'o-', color='#3d7a3d')

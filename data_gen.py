@@ -20,9 +20,9 @@ G_SIZE = 3            # размер группы цифровых проект�
 def generate(n=N_BASE, n_deps=None):
     """Генерация набора из n проектов. Один и тот же seed даёт одинаковые данные.
 
-    Первые n значений cost и ratio совпадают для всех n >= 10 (выборки не зависят
-    от n), поэтому экземпляры 10/20/40/80 вложены друг в друга — удобно для
-    эксперимента масштабирования.
+    Первые n значений cost совпадают для любых n (выборка не зависит от n), но
+    эффекты profit — нет: у последних G_SIZE позиций ratio перегенерируется как
+    «цифровой». Поэтому экземпляры для разных n считаются независимыми.
     """
     rng = np.random.default_rng(SEED)
     if n_deps is None:
@@ -60,6 +60,25 @@ def save(d, csv_path='data/projects.csv', meta_path='data/meta.json'):
                 units='млн руб.')
     with open(meta_path, 'w', encoding='utf-8') as f:
         json.dump(meta, f, ensure_ascii=False, indent=2)
+
+
+def load(csv_path='data/projects.csv', meta_path='data/meta.json'):
+    """Чтение варианта из data/ (CSV + JSON) — вход основного конвейера.
+
+    Модель строится по загруженным файлам, а не по объекту в памяти:
+    правка data/*.csv или meta.json реально влияет на решение.
+    """
+    with open(meta_path, encoding='utf-8') as f:
+        meta = json.load(f)
+    with open(csv_path, newline='', encoding='utf-8') as f:
+        rows = list(csv.DictReader(f))
+    return dict(n=len(rows),
+                cost=np.array([float(r['cost_mln']) for r in rows]),
+                profit=np.array([float(r['profit_mln']) for r in rows]),
+                deps=[tuple(p) for p in meta['deps']],
+                group=meta['group_G'],
+                platform_cost=float(meta['platform_cost_mln']),
+                budget=float(meta['budget_mln']))
 
 
 if __name__ == '__main__':

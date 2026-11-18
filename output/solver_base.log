@@ -34,23 +34,23 @@ Src  Proc. InQueue |  Leaves   Expl. | BestBound       BestSol              Gap 
 56.2% inactive integer columns, restarting
 Model after restart has 2 rows, 7 cols (7 bin., 0 int., 0 impl., 0 cont., 0 dom.fix.), and 9 nonzeros
 
-         0       0         0   0.00%   -893.4666667    -877.5             1.82%        3      0      0        15     0.1s
+         0       0         0   0.00%   -893.4666667    -877.5             1.82%        3      0      0        15     0.0s
 
 28.6% inactive integer columns, restarting
-         0       0         0 100.00%   -877.5          -877.5             0.00%        2      3      0        17     0.1s
+         0       0         0 100.00%   -877.5          -877.5             0.00%        2      3      0        17     0.0s
 
 Solving report
   Status            Optimal
   Primal bound      -877.5
   Dual bound        -877.5
   Gap               0% (tolerance: 0.01%)
-  P-D integral      0.0027040858554
+  P-D integral      0.00146770655564
   Solution status   feasible
                     -877.5 (objective)
                     0 (bound viol.)
                     1.72252784427e-15 (int. viol.)
                     0 (row viol.)
-  Timing            0.05
+  Timing            0.02
   Max sub-MIP depth 1
   Nodes             0
   Repair LPs        0
