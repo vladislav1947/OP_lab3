@@ -44,6 +44,7 @@ matplotlib 3.11.2.
 | `experiments.py` | эксперименты 1–6 + доп. задание |
 | `plots.py` | PNG-графики (backend Agg) |
 | `data/` | данные варианта: `projects.csv`, `meta.json`, `GENERATION.md` (процедура генерации) |
+| `build_pdf.py` | сборка REPORT.md в PDF: `.venv/bin/python build_pdf.py` → `ЛР3_Осипов_ВА_Б24-517.pdf` |
 | `output/` | артефакты: `solution.csv`, `scenarios.csv`, `exp_*.csv`, `verification.txt`, `*.png`, `solver_*.log` |
 | `REPORT.md` | отчёт по требованиям задания |
 
